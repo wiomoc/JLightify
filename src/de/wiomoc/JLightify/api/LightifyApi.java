@@ -14,10 +14,12 @@ public class LightifyApi {
 	private DataInputStream inStream;
 	private ArrayList<Light> Lights = null;
 	private ArrayList<Group> Groups = null;
-	public LightifyApi(String ip) throws UnknownHostException, IOException{
+	boolean DEBUG = false;
+	public LightifyApi(String ip,boolean debug) throws UnknownHostException, IOException{
 		sock = new Socket(ip,4000);
 		outStream = new DataOutputStream(sock.getOutputStream());
 		inStream = new DataInputStream(sock.getInputStream());
+		this.DEBUG = debug;
 	}
 	public void end(){
 		try {
@@ -35,7 +37,7 @@ public class LightifyApi {
 			int n;
 			for(n = i+26;res[n]!='\0';n++);
 			String name = new String(Arrays.copyOfRange(res,i+26,n));
-			Lights.add(new Light(this,(res[i+2+0] & 0xFF) << 16 | (res[i+2+1] & 0xFF) << 8 | (res [i+2+2] & 0xFF),name));
+			Lights.add(new Light(this,(res[i+2+2] & 0xFF) << 16 | (res[i+2+1] & 0xFF) << 8 | (res [i+2+0] & 0xFF),name));
 		}
 		
 		return Lights;
