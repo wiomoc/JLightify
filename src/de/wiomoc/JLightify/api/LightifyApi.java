@@ -15,11 +15,11 @@ public class LightifyApi {
 	private ArrayList<Light> Lights = null;
 	private ArrayList<Group> Groups = null;
 	boolean DEBUG = false;
+	private String mIP;
 	public LightifyApi(String ip,boolean debug) throws UnknownHostException, IOException{
-		sock = new Socket(ip,4000);
-		outStream = new DataOutputStream(sock.getOutputStream());
-		inStream = new DataInputStream(sock.getInputStream());
+		this.mIP = ip;
 		this.DEBUG = debug;
+		connect();
 	}
 	public void end(){
 		try {
@@ -28,12 +28,16 @@ public class LightifyApi {
 			e.printStackTrace();
 		}
 	}
+	private void connect() throws UnknownHostException, IOException{
+		sock = new Socket(this.mIP,4000);
+		outStream = new DataOutputStream(sock.getOutputStream());
+		inStream = new DataInputStream(sock.getInputStream());
+	}
 	public ArrayList<Light> getAllLights(){
 		if(Lights!=null)return Lights;
 		Lights = new ArrayList<Light>();
 		byte [] res = sendCmd(new byte[]{0x07,0x00,0x00,0x13,0x00,0x00,0x00,0x02,0x01});
-		
-		for(int i = 10;i<res.length;i+=50){
+		for(int i = 9;i<res.length;i+=50){
 			int n;
 			for(n = i+26;res[n]!='\0';n++);
 			String name = new String(Arrays.copyOfRange(res,i+26,n));
@@ -52,7 +56,7 @@ public class LightifyApi {
 		Groups = new ArrayList<Group>();
 		byte [] res = sendCmd(new byte[]{0x07,0x00,0x00,0x1e,0x00,0x00,0x00,0x02,0x01});
 		
-		for(int i = 10;i<res.length;i+=18){
+		for(int i = 9;i<res.length;i+=18){
 			int n;
 			for(n = i+2;res[n]!='\0';n++);
 			String name = new String(Arrays.copyOfRange(res,i+2,n));
@@ -63,9 +67,10 @@ public class LightifyApi {
 	}
 	public byte[] sendCmd(byte[] data){
 		try {
+			if(!sock.isConnected())connect();
 			byte[] buf;
 			outStream.write(data);
-			buf= new byte[inStream.read()+1];
+			buf= new byte[inStream.read()|inStream.read()<<8];
 			inStream.read(buf);
 			return buf;
 		} catch (IOException e) {
@@ -79,11 +84,12 @@ public class LightifyApi {
 	
 	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
 	public static String bytesToHex(byte[] bytes) {
-	    char[] hexChars = new char[bytes.length * 2];
+	    char[] hexChars = new char[bytes.length * 3];
 	    for ( int j = 0; j < bytes.length; j++ ) {
 	        int v = bytes[j] & 0xFF;
-	        hexChars[j * 2] = hexArray[v >>> 4];
-	        hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+	        hexChars[j * 3] = hexArray[v >>> 4];
+	        hexChars[j * 3 + 1] = hexArray[v & 0x0F];
+	        hexChars[j * 3 + 2] = ' ';
 	    }
 	    return new String(hexChars);
 	}
