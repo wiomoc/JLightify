@@ -11,12 +11,18 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+
 import de.wiomoc.JLightify.api.LightifyApi;
 
 public class Main {
-
-	public static void main(String[] args) throws UnknownHostException, IOException, InterruptedException {
-		final LightifyApi api = new LightifyApi("192.168.2.59",true);
+	static LightifyApi api;
+	public static void main(String[] args) throws UnknownHostException, IOException  {
+		init("192.168.2.59");
+	}
+	static void init(String ip) throws UnknownHostException, IOException{
+		api  = new LightifyApi(ip,true);
+		api.logIn("USERNAME", "PASSWORD");
+		api.fetchAll();
 		JFrame frame = new JFrame();
         frame.setTitle("JLightify");
         JPanel panel = new JPanel();
@@ -28,6 +34,7 @@ public class Main {
             public void windowClosing(WindowEvent e)
             {
             	api.end();
+            	System.exit(0);
             }
         });
         JTabbedPane tabbedPane = new JTabbedPane();
@@ -41,5 +48,4 @@ public class Main {
         frame.add(panel);
 		frame.setVisible(true);
 	}
-
 }

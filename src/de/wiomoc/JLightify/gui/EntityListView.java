@@ -15,9 +15,6 @@ public class EntityListView extends JPanel {
 		super();
 		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 		for(LightEntity ent:list){
-			if(ent instanceof Light){
-				((Light)ent).fetch();
-			}
 			this.add(new EntityListEntity(ent,det));
 		}
 

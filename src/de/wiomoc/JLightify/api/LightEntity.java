@@ -3,7 +3,7 @@ package de.wiomoc.JLightify.api;
 public class LightEntity {
 
 	protected LightifyApi mApiInstance;
-	protected int mID;
+	protected long mID;
 	protected String mName;
 	protected char mR;
 	protected char mG;
@@ -11,7 +11,7 @@ public class LightEntity {
 	protected short mTemp;
 	protected char mLumi;
 	protected boolean mOnOff;
-	LightEntity(LightifyApi ApiInstance,int ID,String name){
+	LightEntity(LightifyApi ApiInstance,long ID,String name){
 		this.mApiInstance = ApiInstance;
 		this.mID = ID;
 		this.mName = name;
@@ -23,12 +23,16 @@ public class LightEntity {
 	 * @return Success
 	 */
 	public boolean setColor(char R, char G, char B) {
-		mApiInstance.sendCmd(new byte[]{0x14,0x00,(byte) ((this instanceof Group)?0x02:0x00),0x36,0x00,0x00,0x00,0x00,(byte) (mID&0xFF),(byte) ((mID>>8)&0xFF),(byte) ((mID>>16)&0xFF),0x00,0x00,0x26,0x18,(byte) 0x84,(byte) R,(byte) G,(byte) B,(byte) 0xff,0x00,0x00});
+		if(mApiInstance.switchLocalCloud()){
+			byte [] res = sendCmd((byte)0x36,new byte[]{(byte) R,(byte) G,(byte) B,(byte) 0xff,0x00,0x00});
+			if(res==null||res[6]!=0)return false;
+		}else{
+			if(!sendAction("rgbw,"+(int)R+","+(int)G+","+(int)B+",255,00"))return false;
+		}
 		this.mR = R;
 		this.mG = G;
 		this.mB = B;
-		System.out.println(this instanceof Group);
-		return false;
+		return true;
 	}
 
 	/**
@@ -36,9 +40,14 @@ public class LightEntity {
 	 * @return Success
 	 */
 	public boolean setTemp(short Temp) {
-		mApiInstance.sendCmd(new byte[]{0x12,0x00,(byte) ((this instanceof Group)?0x02:0x00),0x33,0x00,0x00,0x00,0x00,(byte) (mID&0xFF),(byte) ((mID>>8)&0xFF),(byte) ((mID>>16)&0xFF),0x00,0x00,0x26,0x18,(byte) 0x84,(byte)(Temp&0xFF),(byte)((Temp>>8)&0xFF),0x00,0x00});
+		if(mApiInstance.switchLocalCloud()){
+			byte [] res = sendCmd((byte)0x33,new byte[]{(byte)(Temp&0xFF),(byte)((Temp>>8)&0xFF),0x00,0x00});
+			if(res==null||res[6]!=0)return false;
+		}else{
+			if(!sendAction("cct,"+Temp+",00"))return false;
+		}
 		this.mTemp = Temp;
-		return false;
+		return true;
 	}
 
 	/**
@@ -46,9 +55,14 @@ public class LightEntity {
 	 * @return Success
 	 */
 	public boolean setLuminosity(char Lumi) {
-		mApiInstance.sendCmd(new byte[]{0x11,0x00,(byte) ((this instanceof Group)?0x02:0x00),0x31,0x00,0x00,0x00,0x00,(byte) (mID&0xFF),(byte) ((mID>>8)&0xFF),(byte) ((mID>>16)&0xFF),0x00,0x00,0x26,0x18,(byte) 0x84,(byte)Lumi,0x00,0x00});
+		if(mApiInstance.switchLocalCloud()){
+			byte [] res = sendCmd((byte)0x31,new byte[]{(byte)Lumi,0x00,0x00});
+			if(res==null||res[6]!=0)return false;
+		}else{
+			if(!sendAction((this.mOnOff?"on":"off")+","+(int)Lumi))return false;
+		}
 		this.mLumi = Lumi;
-		return false;
+		return true;
 	}
 
 	/**
@@ -56,9 +70,14 @@ public class LightEntity {
 	 * @return
 	 */
 	public boolean setOnOff(boolean On) {
-		mApiInstance.sendCmd(new byte[]{0x0f,0x00,(byte) ((this instanceof Group)?0x02:0x00),0x32,0x00,0x00,0x00,0x00,(byte) (mID&0xFF),(byte) ((mID>>8)&0xFF),(byte) ((mID>>16)&0xFF),0x00,0x00,0x26,0x18,(byte) 0x84,(byte) (On?0x01:0x00)});
+		if(mApiInstance.switchLocalCloud()){
+			byte [] res = sendCmd((byte)0x32,new byte[]{(byte) (On?0x01:0x00)});
+			if(res==null||res[6]!=0)return false;
+		}else{
+			if(!sendAction(On?"on":"off"))return false;
+		}
 		this.mOnOff = On;
-		return false;
+		return true;
 	}
 	public short getTemp() {
 		return this.mTemp;
@@ -93,8 +112,34 @@ public class LightEntity {
 	}
 
 
-	public int getID() {
+	public long getID() {
 		return this.mID;
 	}
+	
+	public byte[] sendCmd(byte inst,byte [] pay){
+		byte[] cmd = new byte[pay.length+16];
+		cmd[0] = (byte) ((cmd.length-2)&0xFF);
+		cmd[1] = (byte) (((cmd.length-2)>>8)&0xFF);
+		cmd[2] = (byte) ((this instanceof Group)?0x02:0x00);
+		cmd[3] = inst;
+		cmd[8] = (byte) (mID&0xFF); 
+		cmd[9] = (byte) ((mID>>8)&0xFF);
+		cmd[10] = (byte) ((mID>>16)&0xFF);
+		cmd[11] = (byte) ((mID>>24)&0xFF);
+		cmd[12] = (byte) ((mID>>32)&0xFF);
+		cmd[13] = (byte) ((mID>>40)&0xFF);
+		cmd[14] = (byte) ((mID>>48)&0xFF);
+		cmd[15] = (byte) ((mID>>56)&0xFF);
+		System.arraycopy(pay, 0, cmd, 16, pay.length);
+		if(mApiInstance.DEBUG)System.out.println(LightifyApi.bytesToHex(cmd));
+		return mApiInstance.sendCmd(cmd);
+		
+		
+	}
+	private boolean sendAction(String act){
+		if(this instanceof Group)return mApiInstance.setAttribute("DeviceAction","grou"+((this.mID<10)?"p0":'p')+(int)this.mID+','+act );
+		else return mApiInstance.setAttribute("DeviceAction","devic"+((((Light)this).mIndex<10)?"e0":'e')+(int)((Light)this).mIndex+','+act );
+	}
+  
 
 }

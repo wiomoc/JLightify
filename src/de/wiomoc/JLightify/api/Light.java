@@ -1,14 +1,17 @@
 package de.wiomoc.JLightify.api;
 
 public class Light extends LightEntity {
-	private boolean mIsOnline;
-	Light(LightifyApi ApiInstance, int ID, String name) {
+	boolean mIsOnline;
+	char mIndex;
+	Light(LightifyApi ApiInstance, long ID, String name,char index) {
 		super(ApiInstance, ID, name);
-		if(mApiInstance.DEBUG)System.out.println("Light: ID:"+mID+" Name:"+mName);
+		this.mIndex = index;
+		if(mApiInstance.DEBUG)System.out.println("Light: ID:"+Long.toHexString(mID)+" Name:"+mName);
 	}
 	
-	public boolean fetch(){
-		byte[] res = mApiInstance.sendCmd(new byte[]{0x0f,0x00,0x00,0x68,0x00,0x00,0x00,0x00,(byte) (mID&0xFF),(byte) ((mID>>8)&0xFF),(byte) ((mID>>16)&0xFF),0x00,0x00,0x26,0x18,(byte) 0x84,0x00});
+	public boolean fetchLocal(){
+		byte[] res = sendCmd((byte) 0x68,new byte[]{0x00});
+		if(res==null||res[6]!=0)return false;
 		if(res[17]!=(byte)0x0){
 			if(mApiInstance.DEBUG)System.out.println("Status: Offline");
 			this.mIsOnline = false;

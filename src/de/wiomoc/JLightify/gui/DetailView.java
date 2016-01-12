@@ -78,7 +78,7 @@ public class DetailView extends JPanel implements ChangeListener {
 	public void stateChanged(ChangeEvent e) {
 		if((sel==null)||lock)return;
 		if(((JSlider)e.getSource()).getValueIsAdjusting()){
-			if((System.currentTimeMillis()-timelast)<500)return;
+			if((System.currentTimeMillis()-timelast)<500||(!Main.api.switchLocalCloud()))return;
 			timelast = System.currentTimeMillis();
 		}
 		if(e.getSource()==LumiSlider){
