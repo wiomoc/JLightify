@@ -131,7 +131,6 @@ public class LightEntity {
 		cmd[14] = (byte) ((mID>>48)&0xFF);
 		cmd[15] = (byte) ((mID>>56)&0xFF);
 		System.arraycopy(pay, 0, cmd, 16, pay.length);
-		if(mApiInstance.DEBUG)System.out.println(LightifyApi.bytesToHex(cmd));
 		return mApiInstance.sendCmd(cmd);
 		
 		

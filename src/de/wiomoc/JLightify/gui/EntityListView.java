@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 
-import de.wiomoc.JLightify.api.Light;
 import de.wiomoc.JLightify.api.LightEntity;
 
 

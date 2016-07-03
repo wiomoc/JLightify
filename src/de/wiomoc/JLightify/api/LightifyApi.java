@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -34,15 +33,13 @@ public class LightifyApi {
 	private int CLOUDAPI_DEVICETYPEID = 377;
 	private String secureID;
 	private long devID; 
-	private long lastCloudUpdate = 0;
+	//private long lastCloudUpdate = 0;
 	
 	boolean DEBUG = false;
 	private String mIP;
-	public LightifyApi(String ip,boolean debug) throws UnknownHostException, IOException{
-		this.mIP = ip;
+	public LightifyApi(String ip,boolean debug){
 		this.DEBUG = debug;
-		this.useLocal=true;
-		connectLocal();
+		setGatewayAddress(ip);
 	}
 	public LightifyApi(boolean debug) throws UnknownHostException, IOException{
 		this.DEBUG = debug;
@@ -50,6 +47,15 @@ public class LightifyApi {
 	public void end(){
 		try {
 			if(sock!=null)sock.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	public void setGatewayAddress(String ip){
+		this.mIP = ip;
+		this.useLocal=true;
+		try {
+			connectLocal();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -113,7 +119,7 @@ public class LightifyApi {
 			}
 		}else{
 			try {
-				XMLStreamReader reader = getCloudXml("getDeviceAttributesWithValues?devId="+this.devID+"&deviceTypeId=377&secToken="+this.secureID);
+				XMLStreamReader reader = getCloudXml("getDeviceAttributesWithValues?devId="+this.devID+"&deviceTypeId="+CLOUDAPI_DEVICETYPEID+"&secToken="+this.secureID);
 				boolean attrdetected = false;
 				boolean keydetected = false;
 				boolean valuedetected = false;
@@ -285,7 +291,7 @@ public class LightifyApi {
 	public boolean setAttribute(String key,String value){
 		try {
 			getCloudXml("setMultiDeviceAttributes2?devId="+this.devID+"&name1="+key+"&secToken="+this.secureID+"&value1="+URLEncoder.encode(value,"UTF-8"));
-			System.out.println(value);
+			if(this.DEBUG)System.out.println("Send Action: "+value);
 		} catch (XMLStreamException | IOException e) {
 			e.printStackTrace();
 			return false;
@@ -294,16 +300,6 @@ public class LightifyApi {
 	}
 	
 	
-	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
-	public static String bytesToHex(byte[] bytes) {
-	    char[] hexChars = new char[bytes.length * 3];
-	    for ( int j = 0; j < bytes.length; j++ ) {
-	        int v = bytes[j] & 0xFF;
-	        hexChars[j * 3] = hexArray[v >>> 4];
-	        hexChars[j * 3 + 1] = hexArray[v & 0x0F];
-	        hexChars[j * 3 + 2] = ' ';
-	    }
-	    return new String(hexChars);
-	}
+
 
 }
